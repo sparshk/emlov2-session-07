@@ -1,6 +1,6 @@
 <div align="center">
 
-# Lightning-Hydra-Template
+# Lightning-Hydra-Template (with CIFAR10 and TIMM)
 
 [![python](https://img.shields.io/badge/-Python_3.7_%7C_3.8_%7C_3.9_%7C_3.10-blue?logo=python&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![pytorch](https://img.shields.io/badge/PyTorch_1.8+-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org/get-started/locally/)
@@ -29,6 +29,31 @@ _Suggestions are always welcome!_
 </div>
 
 <br>
+
+## 📌  TSAI Assignment-2 by Sparsh Kedia
+
+**Objectives**
+
+- Integrate timm library to train on cifar10 dataset into this template 
+- Understand the flow of control in hydra and different structures
+- Understand different experiments of hydra, how to override arguments
+
+**Steps to run:**
+
+- Clone this repository and change working directory to the cloned repository.
+
+- Build docker container using this command - 
+    ``` make build  ```
+
+- Train docker container using this command -
+    ``` docker run -it -v `pwd`:/workspace/project sparsh_emlo_session2 python3 src/train.py experiment=cifar.yaml ```
+
+- Eval docker container using this command -
+
+    ``` copy paste the checkpoint path to ckpt_path in configs/experiment/cifar_eval.py from logs/train/runs/<run_timestamp>/<checkpoint_file> ```
+
+    ```docker run -it -v `pwd`:/workspace/project sparsh_emlo_session2 python3 src/eval.py python3 src/eval.py experiment=cifar_eval.yaml```
+
 
 ## 📌  Introduction
 
