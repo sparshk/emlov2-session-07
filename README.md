@@ -30,6 +30,19 @@ _Suggestions are always welcome!_
 
 <br>
 
+## 📌  TSAI Assignment-3 by Sparsh Kedia
+
+This is built on top of Assignment-2(in the next section).
+
+**Objectives**
+
+- To be updated
+
+**Steps to run:**
+
+- To be updated
+
+
 ## 📌  TSAI Assignment-2 by Sparsh Kedia
 
 **Objectives**
