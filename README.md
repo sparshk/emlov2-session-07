@@ -36,12 +36,24 @@ This is built on top of Assignment-2(in the next section).
 
 **Objectives**
 
-- To be updated
+- To do hyperparameter sweep using on CIFAR10 dataset with resnet18 model(timm library) and find the best batch size, optimizer and learning rate.
+- To push the model, data and logs using DVC for experiment tracking
+- Use tensorboard as our logging framework for visualization purposes
 
 **Steps to run:**
 
-- To be updated
-
+- Git clone the repository - 
+        ``` git clone https://github.com/sparshk/emlov2-session-03.git ```
+- Change working directory to the cloned repo - 
+        ``` cd emlov2-session-03 ```
+- Create conda environment - 
+        ``` conda create --name <env_name> ```
+- Activate conda environment - 
+        ``` conda activate <env_name> ```
+- Install requirements - 
+        ``` pip install -r requirements.txt ```       
+- Run the hypermater sweep - 
+        ``` python src/train.py hparams_search=cifar_optuna experiment=cifar ```
 
 ## 📌  TSAI Assignment-2 by Sparsh Kedia
 
