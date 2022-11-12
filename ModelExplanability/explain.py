@@ -3,7 +3,7 @@ import os
 import sys
 import pyrootutils
 
-root = pyrootutils.setup_root(sys.path[0], pythonpath=True, cwd=True)
+#root = pyrootutils.setup_root(sys.path[0], pythonpath=True, cwd=True)
 
 import shap
 import timm
@@ -44,7 +44,7 @@ from captum.attr import (
     visualization as viz,
 )
 
-device = torch.device("cuda")
+device = torch.device("cpu")
 
 model = timm.create_model("vit_base_patch32_224", pretrained=True)
 model.eval()
@@ -517,16 +517,19 @@ for i, image in enumerate(image_list):
     # print("Predicted:", predicted_label, "(", prediction_score.squeeze().item(), ")")
 
     # integrated gradients
+    print("*****************Executing Integrated Gradients*****************")
     integrated_gradients = integratedGradients(img_tensor, transformed_img, op_image_name, model, pred_label_idx)
     # noise Tunnel
-    noiseTunnel(img_tensor, transformed_img, op_image_name, pred_label_idx, integrated_gradients)
+    #print("*****************noiseTunnel*****************")
+    #noiseTunnel(img_tensor, transformed_img, op_image_name, pred_label_idx, integrated_gradients)
 
     ##############################################
     torch.manual_seed(0)
     np.random.seed(0)
+    print("*****************gradientShap*****************")
 
     gradientShap(img_tensor, transformed_img, op_image_name, model, pred_label_idx)
-
+    print("*****************occlusion_output*****************")
     occlusion_output(img_tensor, transformed_img, op_image_name, model, pred_label_idx)
 
     #############################
@@ -547,6 +550,8 @@ for i, image in enumerate(image_list):
     # ## SHAP
 
     # Works well where number of classes are less
+    print("*****************Executing SHAP*****************")
+
     shap_output(img, op_image_name, model)
 
 
@@ -555,15 +560,18 @@ for i, image in enumerate(image_list):
     # print(f"Classes: {classes}: {np.array(categories)[classes]}")
 
     # Saliency
+    print("*****************Executing SALIENCY*****************")
     saliency_output(img, model, op_image_name)
 
 
 
     # # ## Captum Model Robustness
-
+    print("*****************Executing captum_model_robustness*****************")
     captum_model_robustness(img, model, op_image_name)
 
     # Grad CAM
-    grad_cam_visualization(img_tensor, model, op_image_name)
+    print("*****************Executing grad_cam_visualization******************)
+    grad_cam_visualization(img_tensor, model, op_image_name)    print("*****************Executing grad_cam_visualization*****************")
+    print("*****************Executing grad_cam_visualization_plusplus*****************")
     grad_cam_visualization_plusplus(img_tensor, model, op_image_name)
 
