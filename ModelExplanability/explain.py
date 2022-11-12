@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 import torchvision.transforms as T
 import os
-
+import cv2
 from PIL import Image
 from captum.robust import PGD, FGSM
 from captum.attr import FeatureAblation
@@ -44,7 +44,7 @@ from captum.attr import (
     visualization as viz,
 )
 
-device = torch.device("cpu")
+device = torch.device("cuda")
 
 model = timm.create_model("vit_base_patch32_224", pretrained=True)
 model.eval()
@@ -453,39 +453,62 @@ def captum_model_robustness(img, model, path_dir):
     image_show(pixel_dropout_im.cpu(), new_pred_dropout + " " + str(score_dropout), path_dir+"_min_robust_perturbation.png")
 
 
-def grad_cam_visualization(img_tensor, model, path_dir):
-    #model = torch.hub.load('facebookresearch/deit:main',
-    #                       'deit_tiny_patch16_224', pretrained=True)
+def grad_cam_visualization(img_path, path_dir):
+    model = torch.hub.load('facebookresearch/deit:main',
+                           'deit_tiny_patch16_224', pretrained=True)
+    model.eval()
+    model.cuda()
+    # Grad CAM
 
-    target_layers = [model.layer4[-1]]
-    cam = GradCAM(model=model, target_layers=target_layers, use_cuda=True)
+    target_layers = [model.blocks[-1].norm1]
 
-    targets = [ClassifierOutputTarget(281)]
+    def reshape_transform(tensor, height=14, width=14):
+        result = tensor[:, 1:, :].reshape(tensor.size(0),
+                                          height, width, tensor.size(2))
+
+        # Bring the channels to the first dimension,
+        # like in CNNs.
+        result = result.transpose(2, 3).transpose(1, 2)
+        #         print(result.shape)
+        return result
+
+    rgb_img = cv2.imread(img_path, 1)  # [:, :, ::-1]
+    #     print(rgb_img.shape)
+    rgb_img = cv2.resize(rgb_img, (224, 224))
+    rgb_img = np.float32(rgb_img) / 255
+    img_tensor = preprocess_image(rgb_img, mean=[0.5, 0.5, 0.5],
+                                  std=[0.5, 0.5, 0.5])
+    #     print(img_tensor.shape)
+    targets = None
+
+    cam = GradCAM(model=model, target_layers=target_layers, use_cuda=True, reshape_transform=reshape_transform)
+
+    # You can override the internal batch size for faster computation.
+    cam.batch_size = 32
 
     # You can also pass aug_smooth=True and eigen_smooth=True, to apply smoothing.
+    grayscale_cam = cam(input_tensor=img_tensor, targets=targets, eigen_smooth=True, aug_smooth=True)
+
+    # In this example grayscale_cam has only one image in the batch:
+    # Here grayscale_cam has only one image in the batch
+    grayscale_cam = grayscale_cam[0, :]
+
+    cam_image = show_cam_on_image(rgb_img, grayscale_cam)
+    cv2.imwrite(path_dir + "_gradcam.png", cam_image)
+
+    #     plt.imshow(visualization)
+
+    cam = GradCAMPlusPlus(model=model, target_layers=target_layers, use_cuda=True, reshape_transform=reshape_transform)
+    # You can override the internal batch size for faster computation.
+    cam.batch_size = 32
+
     grayscale_cam = cam(input_tensor=img_tensor, targets=targets)
+
     # In this example grayscale_cam has only one image in the batch:
     grayscale_cam = grayscale_cam[0, :]
-    rgb_img = inv_transform(img_tensor).cpu().squeeze().permute(1, 2, 0).detach().numpy()
-    visualization = show_cam_on_image(rgb_img, grayscale_cam, use_rgb=True)
-    plt.imshow(visualization)
 
-def grad_cam_visualization_plusplus(img_tensor, model, path_dir):
-    #model = torch.hub.load('facebookresearch/deit:main',
-    #                       'deit_tiny_patch16_224', pretrained=True)
-
-    target_layers = [model.layer4[-1]]
-    cam = GradCAMPlusPlus(model=model, target_layers=target_layers, use_cuda=True)
-
-    targets = [ClassifierOutputTarget(281)]
-
-    # You can also pass aug_smooth=True and eigen_smooth=True, to apply smoothing.
-    grayscale_cam = cam(input_tensor=img_tensor, targets=targets)
-    # In this example grayscale_cam has only one image in the batch:
-    grayscale_cam = grayscale_cam[0, :]
-    rgb_img = inv_transform(img_tensor).cpu().squeeze().permute(1, 2, 0).detach().numpy()
-    visualization = show_cam_on_image(rgb_img, grayscale_cam, use_rgb=True)
-    plt.imshow(visualization)
+    cam_image = show_cam_on_image(rgb_img, grayscale_cam)
+    cv2.imwrite(path_dir + "_gradcam_plus_plus.png", cam_image)
 
 for i, image in enumerate(image_list):
     # create the directory for each image
@@ -514,22 +537,22 @@ for i, image in enumerate(image_list):
 
     pred_label_idx.squeeze_()
     predicted_label = categories[pred_label_idx.item()]
-    # print("Predicted:", predicted_label, "(", prediction_score.squeeze().item(), ")")
+    print("Predicted:", predicted_label, "(", prediction_score.squeeze().item(), ")")
 
-    # integrated gradients
-    print("*****************Executing Integrated Gradients*****************")
+    #integrated gradients
+    print("\n\n*****************Executing Integrated Gradients*****************\n\n")
     integrated_gradients = integratedGradients(img_tensor, transformed_img, op_image_name, model, pred_label_idx)
     # noise Tunnel
-    #print("*****************noiseTunnel*****************")
-    #noiseTunnel(img_tensor, transformed_img, op_image_name, pred_label_idx, integrated_gradients)
+    print("\n*****************noiseTunnel*****************\n")
+    noiseTunnel(img_tensor, transformed_img, op_image_name, pred_label_idx, integrated_gradients)
 
     ##############################################
     torch.manual_seed(0)
     np.random.seed(0)
-    print("*****************gradientShap*****************")
+    print("\n*****************gradientShap*****************\n")
 
     gradientShap(img_tensor, transformed_img, op_image_name, model, pred_label_idx)
-    print("*****************occlusion_output*****************")
+    print("\n*****************occlusion_output*****************\n")
     occlusion_output(img_tensor, transformed_img, op_image_name, model, pred_label_idx)
 
     #############################
@@ -550,7 +573,7 @@ for i, image in enumerate(image_list):
     # ## SHAP
 
     # Works well where number of classes are less
-    print("*****************Executing SHAP*****************")
+    print("\n*****************Executing SHAP*****************\n")
 
     shap_output(img, op_image_name, model)
 
@@ -560,18 +583,19 @@ for i, image in enumerate(image_list):
     # print(f"Classes: {classes}: {np.array(categories)[classes]}")
 
     # Saliency
-    print("*****************Executing SALIENCY*****************")
+    print("\n*****************Executing SALIENCY*****************\n")
     saliency_output(img, model, op_image_name)
 
 
 
     # # ## Captum Model Robustness
-    print("*****************Executing captum_model_robustness*****************")
+    print("\n*****************Executing captum_model_robustness*****************\n")
     captum_model_robustness(img, model, op_image_name)
 
     # Grad CAM
-    print("*****************Executing grad_cam_visualization******************)
-    grad_cam_visualization(img_tensor, model, op_image_name)    print("*****************Executing grad_cam_visualization*****************")
-    print("*****************Executing grad_cam_visualization_plusplus*****************")
-    grad_cam_visualization_plusplus(img_tensor, model, op_image_name)
+    print("\n*****************Executing grad_cam_visualization******************\n")
+    img_path = "images/"+image
+    grad_cam_visualization(img_path, op_image_name)   
+    #print("*****************Executing grad_cam_visualization_plusplus*****************")
+    #grad_cam_visualization_plusplus(img_tensor, model, op_image_name)
 
