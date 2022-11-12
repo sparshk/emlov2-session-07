@@ -30,7 +30,7 @@ _Suggestions are always welcome!_
 
 ## 📌  TSAI Assignment-7 by Sparsh Kedia
 
-This is built on top of Assignment-2(in the next section).
+This is built on top of Assignment-3(in the next section).
 
 **Objectives**
 
@@ -40,18 +40,18 @@ Techniques implemented in this -
 
 **Model Explanation with**- 
 
-IG
-IG w/ Noise Tunnel
-Saliency
-Occlusion
-SHAP
-GradCAM
-GradCAM++
+- IG
+- IG w/ Noise Tunnel
+- Saliency
+- Occlusion
+- SHAP
+- GradCAM
+- GradCAM++
 
 **Model Robustness with** -
 
-Pixel Dropout
-FGSM
+- Pixel Dropout
+- FGSM
 
 **Steps to run:**
 
